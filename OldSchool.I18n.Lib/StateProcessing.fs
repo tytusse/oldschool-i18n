@@ -14,16 +14,15 @@ type ExtractableCollector(fs:System.IO.Abstractions.IFileSystem,i18Class,i18Meth
             else (fun content ->
                     i18Methods
                     |> List.collect (fun i18Method -> 
-                        (Extractor (fun _ -> ())).ExtractFs i18Class i18Method filePath content))
+                        (Extractor ignore).ExtractFs i18Class i18Method filePath content))
 
     let rec extract dir =
-        let subdirs = fs.Directory.GetDirectories(dir) |> Seq.map extract |> Seq.concat
+        let subdirs = fs.Directory.GetDirectories(dir) |> Seq.collect extract
 
         let result = 
             fs.Directory.GetFiles(dir) 
             |> Seq.filter(fun file -> fileExtensions |> List.exists (fun ext -> file.ToLower().EndsWith(ext)))
-            |> Seq.map(fun filePath -> filePath |> fs.File.ReadAllText |> extractOne filePath ) 
-            |> Seq.concat
+            |> Seq.collect(fun filePath -> filePath |> fs.File.ReadAllText |> extractOne filePath ) 
 
         [result; subdirs] |> Seq.concat
 
@@ -123,7 +122,7 @@ let importTransl (fs:System.IO.Abstractions.IFileSystem) (cfg:Config) =
 
 let mainProcess log (cfg:Config) (fs:System.IO.Abstractions.IFileSystem) =        
     log "will scan dirs:"
-    cfg.SearchDirs |> List.iter(fun x -> printfn "   %s" (fs.Path.GetFullPath(x)))
+    cfg.SearchDirs |> List.iter(printfn "   %s" << fs.Path.GetFullPath)
     
     sprintf "%s translation at: %s"
         (if fs.File.Exists cfg.OutputPath then "will update " else "will create") 

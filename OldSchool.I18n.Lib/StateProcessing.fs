@@ -96,6 +96,7 @@ let serializeItemsIntoTextJson cfg res =
         |> (fun x -> if (cfg:Config).IncludeAt then x else dropNulls x)
     ).ToString()
 
+/// Map<string, string> -> Map<originalMessage, translation>
 let importTransl (fs:System.IO.Abstractions.IFileSystem) (cfg:Config) = 
     let outExists = fs.File.Exists cfg.OutputPath
 

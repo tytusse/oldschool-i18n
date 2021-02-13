@@ -8,13 +8,13 @@ open System.Collections.Generic
 type ExtractableCollector(fs:System.IO.Abstractions.IFileSystem,i18Class,i18Methods) =
     let fileExtensions = [".cs"; ".fs"]
     let extractOne filePath content = 
-        content 
-        |> if (filePath:string).ToLower().EndsWith(".cs") 
-            then CsExtractor.ExtractCs i18Class i18Methods filePath
-            else (fun content ->
-                    i18Methods
-                    |> List.collect (fun i18Method -> 
-                        (Extractor ignore).ExtractFs i18Class i18Method filePath content))
+        match (fs.Path.GetExtension filePath).ToLower() with
+        | ".cs" -> CsExtractor.ExtractCs i18Class i18Methods filePath content
+        | ".fs" -> 
+            i18Methods
+            |> List.collect (fun i18Method -> 
+                (Extractor ignore).ExtractFs i18Class i18Method filePath content)
+        | ext -> failwithf "cannot extract from file %s - unknown extension: %s" filePath ext
 
     let rec extract dir =
         let subdirs = fs.Directory.GetDirectories(dir) |> Seq.collect extract
